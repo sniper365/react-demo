@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react'
-import { ethers } from 'ethers'
-import VConsole from 'vconsole'
-import getSigner from './signer'
-import { initOnboard, initNotify } from './services'
-import { version, dependencies } from '../package.json'
-import avatarPlaceholder from './avatar-placeholder.png'
-import networkEnum from './networkEnum'
+import React, { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
+import VConsole from 'vconsole';
+import getSigner from './signer';
+import { initOnboard, initNotify } from './services';
+import { version, dependencies } from '../package.json';
+import avatarPlaceholder from './avatar-placeholder.png';
+import networkEnum from './networkEnum';
 
-import './App.css'
+import './App.css';
 
-const staging = process.env.REACT_APP_STAGING
+const staging = process.env.REACT_APP_STAGING;
 
 if (window.innerWidth < 700) {
-  new VConsole()
+  new VConsole();
 }
 
-let provider
+let provider;
 
 const internalTransferABI = [
   {
@@ -31,25 +31,25 @@ const internalTransferABI = [
     stateMutability: 'payable',
     type: 'function'
   }
-]
+];
 
-let internalTransferContract
+let internalTransferContract;
 
 const App = () => {
-  const [address, setAddress] = useState(null)
-  const [ens, setEns] = useState(null)
-  const [network, setNetwork] = useState(null)
-  const [balance, setBalance] = useState(null)
-  const [wallet, setWallet] = useState({})
+  const [address, setAddress] = useState(null);
+  const [ens, setEns] = useState(null);
+  const [network, setNetwork] = useState(null);
+  const [balance, setBalance] = useState(null);
+  const [wallet, setWallet] = useState({});
 
-  const [onboard, setOnboard] = useState(null)
-  const [notify, setNotify] = useState(null)
+  const [onboard, setOnboard] = useState(null);
+  const [notify, setNotify] = useState(null);
 
-  const [darkMode, setDarkMode] = useState(false)
-  const [desktopPosition, setDesktopPosition] = useState('bottomRight')
-  const [mobilePosition, setMobilePosition] = useState('top')
+  const [darkMode, setDarkMode] = useState(false);
+  const [desktopPosition, setDesktopPosition] = useState('bottomRight');
+  const [mobilePosition, setMobilePosition] = useState('top');
 
-  const [toAddress, setToAddress] = useState('')
+  const [toAddress, setToAddress] = useState('');
 
   useEffect(() => {
     const onboard = initOnboard({
@@ -59,66 +59,67 @@ const App = () => {
       balance: setBalance,
       wallet: wallet => {
         if (wallet.provider) {
-          setWallet(wallet)
+          setWallet(wallet);
 
           const ethersProvider = new ethers.providers.Web3Provider(
             wallet.provider
-          )
+          );
 
-          provider = ethersProvider
+          provider = ethersProvider;
 
           internalTransferContract = new ethers.Contract(
             '0xb8c12850827ded46b9ded8c1b6373da0c4d60370',
             internalTransferABI,
             getSigner(ethersProvider)
-          )
+          );
 
-          window.localStorage.setItem('selectedWallet', wallet.name)
+          window.localStorage.setItem('selectedWallet', wallet.name);
+          console.log(wallet);
         } else {
-          provider = null
-          setWallet({})
+          provider = null;
+          setWallet({});
         }
       }
-    })
+    });
 
-    setOnboard(onboard)
+    setOnboard(onboard);
 
-    setNotify(initNotify())
-  }, [])
+    setNotify(initNotify());
+  }, []);
 
   useEffect(() => {
     const previouslySelectedWallet =
-      window.localStorage.getItem('selectedWallet')
+      window.localStorage.getItem('selectedWallet');
 
     if (previouslySelectedWallet && onboard) {
-      onboard.walletSelect(previouslySelectedWallet)
+      onboard.walletSelect(previouslySelectedWallet);
     }
-  }, [onboard])
+  }, [onboard]);
 
   const readyToTransact = async () => {
     if (!provider) {
-      const walletSelected = await onboard.walletSelect()
-      if (!walletSelected) return false
+      const walletSelected = await onboard.walletSelect();
+      if (!walletSelected) return false;
     }
 
-    const ready = await onboard.walletCheck()
-    return ready
+    const ready = await onboard.walletCheck();
+    return ready;
   }
 
   const sendHash = async () => {
     if (!toAddress) {
-      alert('An Ethereum address to send Eth to is required.')
-      return
+      alert('An Ethereum address to send Eth to is required.');
+      return;
     }
 
-    const signer = getSigner(provider)
+    const signer = getSigner(provider);
 
     const { hash } = await signer.sendTransaction({
       to: toAddress,
       value: 1000000000000000
-    })
+    });
 
-    const { emitter } = notify.hash(hash)
+    const { emitter } = notify.hash(hash);
 
     emitter.on('txPool', transaction => {
       return {
@@ -127,19 +128,19 @@ const App = () => {
         onclick: () =>
           window.open(`https://rinkeby.etherscan.io/tx/${transaction.hash}`)
       }
-    })
+    });
 
-    emitter.on('txSent', console.log)
-    emitter.on('txConfirmed', console.log)
-    emitter.on('txSpeedUp', console.log)
-    emitter.on('txCancel', console.log)
-    emitter.on('txFailed', console.log)
+    emitter.on('txSent', console.log);
+    emitter.on('txConfirmed', console.log);
+    emitter.on('txSpeedUp', console.log);
+    emitter.on('txCancel', console.log);
+    emitter.on('txFailed', console.log);
   }
 
   const sendInternalTransaction = async () => {
     if (!toAddress) {
-      alert('An Ethereum address to send Eth to is required.')
-      return
+      alert('An Ethereum address to send Eth to is required.');
+      return;
     }
 
     const { hash } = await internalTransferContract.internalTransfer(
@@ -147,37 +148,39 @@ const App = () => {
       {
         value: 1000000000000000
       }
-    )
+    );
 
-    const { emitter } = notify.hash(hash)
+    const { emitter } = notify.hash(hash);
 
-    emitter.on('txSent', console.log)
-    emitter.on('txPool', console.log)
-    emitter.on('txConfirmed', console.log)
-    emitter.on('txSpeedUp', console.log)
-    emitter.on('txCancel', console.log)
-    emitter.on('txFailed', console.log)
+    emitter.on('txSent', console.log);
+    emitter.on('txPool', console.log);
+    emitter.on('txConfirmed', console.log);
+    emitter.on('txSpeedUp', console.log);
+    emitter.on('txCancel', console.log);
+    emitter.on('txFailed', console.log);
   }
 
   const sendTransaction = async () => {
     if (!toAddress) {
-      alert('An Ethereum address to send Eth to is required.')
+      alert('An Ethereum address to send Eth to is required.');
     }
 
-    const signer = getSigner(provider)
+    const signer = getSigner(provider);
 
     const txDetails = {
       to: toAddress,
       value: 1000000000000000
     }
 
-    const sendTransaction = () =>
-      signer.sendTransaction(txDetails).then(tx => tx.hash)
+    const sendTransaction = () => {
+      signer.sendTransaction(txDetails).then(tx => tx.hash);
+    }
 
-    const gasPrice = () => provider.getGasPrice().then(res => res.toString())
+    const gasPrice = () => provider.getGasPrice().then(res => res.toString());
 
-    const estimateGas = () =>
-      provider.estimateGas(txDetails).then(res => res.toString())
+    const estimateGas = () => {
+      provider.estimateGas(txDetails).then(res => res.toString());
+    }
 
     const { emitter } = await notify.transaction({
       sendTransaction,
@@ -185,25 +188,27 @@ const App = () => {
       estimateGas,
       balance: onboard.getState().balance,
       txDetails
-    })
+    });
 
-    emitter.on('txRequest', console.log)
-    emitter.on('nsfFail', console.log)
-    emitter.on('txRepeat', console.log)
-    emitter.on('txAwaitingApproval', console.log)
-    emitter.on('txConfirmReminder', console.log)
-    emitter.on('txSendFail', console.log)
-    emitter.on('txError', console.log)
-    emitter.on('txUnderPriced', console.log)
-    emitter.on('txSent', console.log)
-    emitter.on('txPool', console.log)
-    emitter.on('txConfirmed', console.log)
-    emitter.on('txSpeedUp', console.log)
-    emitter.on('txCancel', console.log)
-    emitter.on('txFailed', console.log)
+    emitter.on('txRequest', console.log);
+    emitter.on('nsfFail', console.log);
+    emitter.on('txRepeat', console.log);
+    emitter.on('txAwaitingApproval', console.log);
+    emitter.on('txConfirmReminder', console.log);
+    emitter.on('txSendFail', console.log);
+    emitter.on('txError', console.log);
+    emitter.on('txUnderPriced', console.log);
+    emitter.on('txSent', console.log);
+    emitter.on('txPool', console.log);
+    emitter.on('txConfirmed', console.log);
+    emitter.on('txSpeedUp', console.log);
+    emitter.on('txCancel', console.log);
+    emitter.on('txFailed', console.log);
   }
 
-  return onboard && notify ? (
+  if (!onboard || !notify) return <div>Loading...</div>
+
+  return (
     <main>
       <header className="user-info">
         {ens && ens.name ? (
@@ -530,9 +535,7 @@ const App = () => {
         </span>
       </div>
     </main>
-  ) : (
-    <div>Loading...</div>
-  )
+  );
 }
 
 export default App
